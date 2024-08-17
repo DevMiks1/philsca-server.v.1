@@ -15,6 +15,7 @@ exports.updateStaffDetailsById = async (req, res) => {
       email,
       password,
       position,
+      designation,
       hgt,
       wgt,
       sss,
@@ -25,6 +26,7 @@ exports.updateStaffDetailsById = async (req, res) => {
       middleName,
       lastName,
       suffix,
+      birthDate,
       address,
       contactNumber,
       contactPerson,
@@ -59,8 +61,8 @@ exports.updateStaffDetailsById = async (req, res) => {
     const { personalInfoId, userAccountId } = userDetails;
 
     const [personalInfo, userAccount] = await Promise.all([
-      UserAccountModel.findById(userAccountId).session(session),
       PersonalInfoModel.findById(personalInfoId).session(session),
+      UserAccountModel.findById(userAccountId).session(session),
     ]);
 
     if (!personalInfo) {
@@ -68,6 +70,31 @@ exports.updateStaffDetailsById = async (req, res) => {
       session.endSession();
       return res.status(404).json({
         message: "Personal info not found",
+      });
+    }
+
+    const existingContactNumber = await PersonalInfoModel.findOne({
+      contactNumber,
+      _id: { $ne: personalInfoId },
+    })
+    if(existingContactNumber) {
+      await session.abortTransaction();
+      session.endSession();
+      return res.status(400).json({ success: false, message: "Contact Number is exist" });
+    }
+    const existingContactPersonNumber = await PersonalInfoModel.findOne({
+       contactPersonNumber,
+      _id: { $ne: personalInfoId },
+    })
+    if(existingContactPersonNumber) {
+      await session.abortTransaction();
+      session.endSession();
+      return res.status(400).json({ success: false, message: "ContactPerson Number is exist" });
+    }
+    if (contactNumber === contactPersonNumber) {
+      return res.status(400).json({
+        success: false,
+        message: "Contact Number and Contact Person Number cannot be the same",
       });
     }
     
@@ -140,6 +167,7 @@ exports.updateStaffDetailsById = async (req, res) => {
           middleName,
           lastName,
           suffix,
+          birthDate,
           address,
           contactNumber,
           contactPerson,
@@ -150,9 +178,10 @@ exports.updateStaffDetailsById = async (req, res) => {
       ),
       PersonnelDetailsModel.findByIdAndUpdate(
         personnelDetailsId,
-        { position, hgt, wgt, sss, tin, isIdIssued },
+        { position, hgt, wgt, sss, tin, isIdIssued, designation },
         { new: true, session }
       ),
+      
     ]);
 
     await session.commitTransaction();
@@ -162,10 +191,19 @@ exports.updateStaffDetailsById = async (req, res) => {
       success: true,
       message: "Faculty details updated successfully",
       data: {
-        personnelDetailsData,
-        userAccountData,
-        personalInfoData,
-        roleDetailsData,
+        _id: staffDetails._id,
+        personnelDetailsId: personnelDetailsData,
+        userDetailsId: {
+          _id: userDetailsId,
+          personalInfoId: personalInfoData,
+          userAccountId: {
+            ...userAccountData._doc,
+            roleDetailsId: roleDetailsData, 
+          },
+        },
+        
+        createdAt: staffDetails.createdAt,
+        updatedAt: staffDetails.updatedAt,
       },
     });
   } catch (error) {

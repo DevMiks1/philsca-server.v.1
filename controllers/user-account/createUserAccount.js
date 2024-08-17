@@ -50,9 +50,8 @@ exports.createUserAccount = async (req, res) => {
     const userAccount = await UserAccountModel.create({
       email,
       password,
-      roleDetailsId: roleDetailsId,
+      roleDetailsId: roleDetails,
     });
-    const userAccountId = userAccount._id;
 
     const personalInfo = await PersonalInfoModel.create({
       firstName: "",
@@ -60,65 +59,62 @@ exports.createUserAccount = async (req, res) => {
       lastName: "",
       suffix: "",
       address: "",
+      birthDate: "",
       contactNumber: "",
       contactPerson: "",
       contactPersonNumber: "",
     });
-    const personalInfoId = personalInfo._id;
 
     const userDetails = await UserDetailsModel.create({
-      personalInfoId: personalInfoId,
-      userAccountId: userAccountId,
+      personalInfoId: personalInfo,
+      userAccountId: userAccount,
     });
-    const userDetailsId = userDetails._id;
 
+    let data;
     if (role === "student") {
-      await StudentDetailsModel.create({
-        userDetailsId: userDetailsId,
+      data = await StudentDetailsModel.create({
+        userDetailsId: userDetails,
         course: "",
-        year: "",
-        schoolyear: "",
-        semestertype: "",
+        schoolYear: "",
         schoolId: "",
-        
       });
     } else if (role === "faculty") {
       const personnelDetails = await PersonnelDetailsModel.create({
         position: "",
+        designation: "",
         hgt: "",
         wgt: "",
         sss: "",
         tin: "",
       });
-      const personnelDetailsId = personnelDetails._id;
 
-      await FacultyDetailsModel.create({
-        personnelDetailsId: personnelDetailsId,
-        userDetailsId: userDetailsId,
+      data = await FacultyDetailsModel.create({
+        personnelDetailsId: personnelDetails,
+        userDetailsId: userDetails,
       });
-    } else if (role === "faculty") {
+    } else if (role === "staff") {
       const personnelDetails = await PersonnelDetailsModel.create({
         position: "",
+        designation: "",
         hgt: "",
         wgt: "",
         sss: "",
         tin: "",
       });
-      const personnelDetailsId = personnelDetails._id;
-      await StaffDetailsModel.create({
-        personnelDetailsId: personnelDetailsId,
-        userDetailsId: userDetailsId,
+      data = await StaffDetailsModel.create({
+        personnelDetailsId: personnelDetails,
+        userDetailsId: userDetails,
       });
-    } else if (role === 'admin') {
-      await AdminDetailsModel.create({
-        userDetailsId: userDetailsId,      
+    } else if (role === "admin") {
+      data = await AdminDetailsModel.create({
+        userDetailsId: userDetails,
       });
     }
     // Return success response
     return res.status(201).json({
       success: true,
       message: "Account added successfully",
-      data: userDetails,
+      data: data,
     });
   } catch (error) {
     return res.status(500).json({

@@ -101,7 +101,7 @@ exports.updateAdminDetailsById = async (req, res) => {
       return res.status(404).json({ message: "Role details not found" });
     }
 
-    const [userAccountData, personalInfoData, studentDetailsData, roleDetailsData] = await Promise.all([
+    const [userAccountData, roleDetailsData, personalInfoData,  ] = await Promise.all([
       
       UserAccountModel.findByIdAndUpdate(
         userAccountId,

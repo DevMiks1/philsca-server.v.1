@@ -9,6 +9,7 @@ const personalInfo = new Schema({
   middleName: {type: String, required:false},
   suffix: { type: String, required: false },
   address: { type: String, required: false },
+  birthDate: { type: String, required: false },
   contactNumber: { type: String, required: false },
   contactPerson: { type: String, required: false },
   contactPersonNumber: { type: String, required: false },
