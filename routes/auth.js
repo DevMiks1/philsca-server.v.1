@@ -8,7 +8,7 @@ router.get('/auth', authentication, (req, res) => {
     user: req.user.user,
     token:req.user.token
   });
-    
+    console.log(req.user.user);
 });
 
 module.exports = router;

@@ -61,29 +61,36 @@ exports.updateStudentDetailsById = async (req, res) => {
       return res.status(404).json({ message: "Personal info not found" });
     }
 
-    const existingContactNumber = await PersonalInfoModel.findOne({
-      contactNumber,
-      _id: { $ne: personalInfoId },
-    })
-    if(existingContactNumber) {
-      await session.abortTransaction();
-      session.endSession();
-      return res.status(400).json({ success: false, message: "Contact Number is exist" });
-    }
-    const existingContactPersonNumber = await PersonalInfoModel.findOne({
-       contactPersonNumber,
-      _id: { $ne: personalInfoId },
-    })
-    if(existingContactPersonNumber) {
-      await session.abortTransaction();
-      session.endSession();
-      return res.status(400).json({ success: false, message: "ContactPerson Number is exist" });
-    }
-    if (contactNumber === contactPersonNumber) {
-      return res.status(400).json({
-        success: false,
-        message: "Contact Number and Contact Person Number cannot be the same",
-      });
+    if (contactNumber !== undefined && contactPersonNumber !== undefined) {
+      // Check for existing contact number and contact person number
+      const existingContactNumber = await PersonalInfoModel.findOne({
+        contactNumber,
+        _id: { $ne: personalInfoId },
+      }).session(session);
+
+      if (existingContactNumber) {
+        await session.abortTransaction();
+        session.endSession();
+        return res.status(400).json({ success: false, message: "Contact Number already exists" });
+      }
+
+      const existingContactPersonNumber = await PersonalInfoModel.findOne({
+        contactPersonNumber,
+        _id: { $ne: personalInfoId },
+      }).session(session);
+
+      if (existingContactPersonNumber) {
+        await session.abortTransaction();
+        session.endSession();
+        return res.status(400).json({ success: false, message: "Contact Person Number already exists" });
+      }
+
+      if (contactNumber === contactPersonNumber) {
+        return res.status(400).json({
+          success: false,
+          message: "Contact Number and Contact Person Number cannot be the same",
+        });
+      }
     }
     if (!userAccount) {
       await session.abortTransaction();
@@ -91,17 +98,19 @@ exports.updateStudentDetailsById = async (req, res) => {
       return res.status(404).json({ message: "User account not found" });
     }
 
-    // Check for existing email
-    const existingEmail = await UserAccountModel.findOne({
-      email,
-      _id: { $ne: userAccountId },
-    }).session(session);
+    if (email !== undefined) { 
 
-    if (existingEmail) {
-      await session.abortTransaction();
-      session.endSession();
-      return res.status(400).json({ success: false, message: "Email already exists" });
+      const existingEmail = await UserAccountModel.findOne({
+        email,
+        _id: { $ne: userAccountId },
+      }).session(session);
+      if (existingEmail) {
+        await session.abortTransaction();
+        session.endSession();
+        return res.status(400).json({ success: false, message: "Email already exists" });
+      }
     }
+
 
     // Check for existing school ID
     const { roleDetailsId } = userAccount;

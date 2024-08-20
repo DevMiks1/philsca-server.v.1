@@ -63,6 +63,7 @@ exports.createUserAccount = async (req, res) => {
       contactNumber: "",
       contactPerson: "",
       contactPersonNumber: "",
+      picture: "",
     });
 
     const userDetails = await UserDetailsModel.create({

@@ -19,6 +19,7 @@ exports.updateAdminDetailsById = async (req, res) => {
       lastName,
       suffix,
       address,
+      birthDate,
       contactNumber,
       contactPerson,
       contactPersonNumber,
@@ -59,7 +60,30 @@ exports.updateAdminDetailsById = async (req, res) => {
         message: "Personal info not found",
       });
     }
-
+    const existingContactNumber = await PersonalInfoModel.findOne({
+      contactNumber,
+      _id: { $ne: personalInfoId },
+    })
+    if(existingContactNumber) {
+      await session.abortTransaction();
+      session.endSession();
+      return res.status(400).json({ success: false, message: "Contact Number is exist" });
+    }
+    const existingContactPersonNumber = await PersonalInfoModel.findOne({
+       contactPersonNumber,
+      _id: { $ne: personalInfoId },
+    })
+    if(existingContactPersonNumber) {
+      await session.abortTransaction();
+      session.endSession();
+      return res.status(400).json({ success: false, message: "ContactPerson Number is exist" });
+    }
+    if (contactNumber === contactPersonNumber) {
+      return res.status(400).json({
+        success: false,
+        message: "Contact Number and Contact Person Number cannot be the same",
+      });
+    }
     if (!userAccount) {
       await session.abortTransaction();
       session.endSession();
@@ -121,6 +145,7 @@ exports.updateAdminDetailsById = async (req, res) => {
           middleName,
           lastName,
           suffix,
+          birthDate,
           address,
           contactNumber,
           contactPerson,
@@ -139,9 +164,18 @@ exports.updateAdminDetailsById = async (req, res) => {
       success: true,
       message: "Admin details updated successfully",
       data: {
-        userAccountData,
-        personalInfoData,
-        roleDetailsData,
+        _id: adminDetails._id,
+        userDetailsId: {
+          _id: userDetailsId,
+          personalInfoId: personalInfoData,
+          userAccountId: {
+            ...userAccountData._doc,
+            roleDetailsId: roleDetailsData, 
+          },
+        },
+        
+        createdAt: adminDetails.createdAt,
+        updatedAt: adminDetails.updatedAt,
       },
     });
   } catch (error) {
